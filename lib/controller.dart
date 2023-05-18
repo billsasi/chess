@@ -171,6 +171,11 @@ class Pawn extends Piece {
       return true;
     }
 
+    // blocked
+    if (end.piece != null && x.abs() == 0 && y == 1) {
+      return false;
+    }
+
     if (isFirstMove) {
       if (x == 0 && y == 2) {
         return true;

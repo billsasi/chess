@@ -77,19 +77,15 @@ class ChessGameState extends State<ChessGame> {
                       color: reachable
                           ? Color.fromARGB(255, 166, 255, 102)
                           : isWhite
-                              ? const Color.fromARGB(255, 220, 220, 220)
-                              : const Color.fromARGB(255, 86, 86, 86),
+                              ? Color.fromARGB(255, 255, 255, 255)
+                              : Color.fromARGB(255, 133, 223, 243),
                       child: Center(
                         child: piece == null
                             ? null
-                            : Text(
-                                _getPieceUnicode(piece),
-                                style: TextStyle(
-                                  fontSize: 32.0,
-                                  color: piece.isWhite
-                                      ? Colors.white
-                                      : Colors.black,
-                                ),
+                            : Image.asset(
+                                _getPieceImageAsset(piece),
+                                width: 32.0,
+                                height: 32.0,
                               ),
                       ),
                     ));
@@ -104,7 +100,7 @@ class ChessGameState extends State<ChessGame> {
                   color: Color.fromARGB(255, 255, 255, 255),
                   child: Center(
                     child: Text(
-                      _getPieceUnicode(item),
+                      _getPieceImageAsset(item),
                       style: const TextStyle(
                         fontSize: 20.0,
                       ),
@@ -121,15 +117,35 @@ class ChessGameState extends State<ChessGame> {
   }
 }
 
+String _getPieceImageAsset(Piece piece) {
+  final pieceName = piece.isWhite ? 'l' : 'd';
+
+  if (piece is King) {
+    return 'assets/images/Chess_k${pieceName}t45.svg.png';
+  } else if (piece is Queen) {
+    return 'assets/images/Chess_q${pieceName}t45.svg.png';
+  } else if (piece is Rook) {
+    return 'assets/images/Chess_r${pieceName}t45.svg.png';
+  } else if (piece is Bishop) {
+    return 'assets/images/Chess_b${pieceName}t45.svg.png';
+  } else if (piece is Knight) {
+    return 'assets/images/Chess_n${pieceName}t45.svg.png';
+  } else if (piece is Pawn) {
+    return 'assets/images/Chess_p${pieceName}t45.svg.png';
+  } else {
+    return '';
+  }
+}
+
 String _getPieceUnicode(Piece piece) {
   if (piece is King) {
-    return piece.isWhite ? '♔' : '♚';
+    return piece.isWhite ? '' : '♚';
   } else if (piece is Queen) {
     return piece.isWhite ? '♕' : '♛';
   } else if (piece is Rook) {
     return piece.isWhite ? '♖' : '♜';
   } else if (piece is Bishop) {
-    return piece.isWhite ? '♗' : '♝';
+    return piece.isWhite ? 'Chess_blt45.svg.png' : 'Chess_bdt45.svg.png';
   } else if (piece is Knight) {
     return piece.isWhite ? '♘' : '♞';
   } else if (piece is Pawn) {
