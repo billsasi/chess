@@ -1,127 +1,183 @@
-// import 'z1.dart';
+import 'package:flutter/material.dart';
+import 'controller.dart';
 
-// Future<void> main() async {
-//   await z1();
-// }
-// import 'package:chess/controller.dart';
-// import 'package:flutter/material.dart';
+class ChessGame extends StatefulWidget {
+  @override
+  const ChessGame({Key? key}) : super(key: key);
 
-// void main() {
-//   runApp(const MaterialApp(
-//     title: 'Chess',
-//     home: ChessGame(),
-//   ));
-// }
+  @override
+  ChessGameState createState() => ChessGameState();
+}
 
-// class ChessGame extends StatefulWidget {
-//   @override
-//   const ChessGame({Key? key}) : super(key: key);
+class ChessGameState extends State<ChessGame> {
+  late final Game game;
+  Board? get board => game.board;
+  Spot? selectedSpot;
 
-//   @override
-//   ChessGameState createState() => ChessGameState();
-// }
+  @override
+  void initState() {
+    super.initState();
 
-// class ChessGameState extends State<ChessGame> {
-//   late final Game game;
-//   Board? get board => game.board;
-//   Spot? selectedSpot;
+    final whitePlayer = Player(true, 'White Player');
+    final blackPlayer = Player(false, 'Black Player');
+    game = Game([whitePlayer, blackPlayer]);
+    game.startGame(whitePlayer, blackPlayer);
+  }
 
-//   @override
-//   void initState() {
-//     super.initState();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Chess'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: 64,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 8,
+              ),
+              itemBuilder: (BuildContext context, int index) {
+                final int row = (8 - (index ~/ 8)).abs() - 1;
+                final int col = index % 8;
+                final bool isWhite = (row + col) % 2 != 0;
+                final spot = board?.spots[row][col];
+                final piece = spot?.piece;
+                final bool reachable = selectedSpot != null &&
+                    selectedSpot!.piece!
+                        .isValidMove(board!, selectedSpot!, spot!);
+                return DragTarget<Spot>(
+                  builder: (BuildContext context, List<dynamic> candidateData,
+                      List<dynamic> rejectedData) {
+                    return Draggable<Spot>(
+                      feedback: Container(
+                        child: piece == null
+                            ? null
+                            : Image.asset(
+                                _getPieceImageAsset(piece),
+                                width: 32.0,
+                                height: 32.0,
+                              ),
+                      ),
+                      childWhenDragging: Container(),
+                      data: spot,
+                      child: GestureDetector(
+                        onTap: () {
+                          final start = selectedSpot;
+                          final end = spot;
 
-//     final whitePlayer = Player(true, 'White Player');
-//     final blackPlayer = Player(false, 'Black Player');
-//     game = Game([whitePlayer, blackPlayer]);
-//     game.startGame(whitePlayer, blackPlayer);
-//   }
+                          if (selectedSpot == null && piece != null) {
+                            setState(() {
+                              selectedSpot = spot;
+                            });
+                            return;
+                          }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Chess'),
-//       ),
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             GridView.builder(
-//               physics: const NeverScrollableScrollPhysics(),
-//               shrinkWrap: true,
-//               itemCount: 64,
-//               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-//                 crossAxisCount: 8,
-//               ),
-//               itemBuilder: (BuildContext context, int index) {
-//                 final int row = (8 - (index ~/ 8)).abs() - 1;
-//                 final int col = index % 8;
-//                 final bool isWhite = (row + col) % 2 != 0;
-//                 final spot = board?.spots[row][col];
-//                 final piece = spot?.piece;
-//                 return Container(
-//                     color: isWhite
-//                         ? const Color.fromARGB(255, 220, 220, 220)
-//                         : const Color.fromARGB(255, 86, 86, 86),
-//                     child: GestureDetector(
-//                       onTap: () {
-//                         if (piece != null) {
-//                           print('piece tapped');
-//                           setState(() {
-//                             selectedSpot = spot;
-//                           });
-//                         } else if (selectedSpot != null) {
-//                           final start = selectedSpot;
-//                           final end = board?.spots[row][col];
-//                           print('end: $end');
-//                           if (start != null && end != null) {
-//                             if (game.playerMove(start, end)) {
-//                               setState(() {
-//                                 selectedSpot = null;
-//                               });
-//                             }
-//                           }
-//                         }
-//                       },
-//                       child: Center(
-//                         child: piece == null
-//                             ? null
-//                             : Text(
-//                                 _getPieceUnicode(piece),
-//                                 style: TextStyle(
-//                                   fontSize: 32.0,
-//                                   color: piece.isWhite
-//                                       ? Colors.white
-//                                       : Colors.black,
-//                                 ),
-//                               ),
-//                       ),
-//                     ));
-//               },
-//             ),
-//             const SizedBox(height: 16.0),
-//             Text(game.currentPlayer?.name ?? ''),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
+                          if (start != null && end != null) {
+                            if (game.playerMove(start, end)) {}
+                            setState(() => selectedSpot = null);
+                          }
+                        },
+                        child: Container(
+                          color: reachable
+                              ? Color.fromARGB(255, 166, 255, 102)
+                              : isWhite
+                                  ? Color.fromARGB(255, 255, 255, 255)
+                                  : Color.fromARGB(255, 133, 223, 243),
+                          child: Center(
+                            child: piece == null
+                                ? null
+                                : Image.asset(
+                                    _getPieceImageAsset(piece),
+                                    width: 32.0,
+                                    height: 32.0,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  onWillAccept: (Spot? spot) {
+                    return selectedSpot != null &&
+                        selectedSpot!.piece!
+                            .isValidMove(board!, selectedSpot!, spot!);
+                  },
+                  onAccept: (Spot? spot) {
+                    final start = selectedSpot;
+                    final end = spot;
 
-// String _getPieceUnicode(Piece piece) {
-//   if (piece is King) {
-//     return piece.isWhite ? '♔' : '♚';
-//   } else if (piece is Queen) {
-//     return piece.isWhite ? '♕' : '♛';
-//   } else if (piece is Rook) {
-//     return piece.isWhite ? '♖' : '♜';
-//   } else if (piece is Bishop) {
-//     return piece.isWhite ? '♗' : '♝';
-//   } else if (piece is Knight) {
-//     return piece.isWhite ? '♘' : '♞';
-//   } else if (piece is Pawn) {
-//     return piece.isWhite ? '♙' : '♟︎';
-//   } else {
-//     return '';
-//   }
-// }
+                    if (start != null && end != null) {
+                      if (game.playerMove(start, end)) {}
+                      setState(() => selectedSpot = null);
+                    }
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 16.0),
+            Row(
+              children: game.players[0].killedPieces.map((item) {
+                return Container(
+                  width: 50,
+                  height: 50,
+                  color: Color.fromARGB(255, 255, 255, 255),
+                  child: Center(
+                    child: Text(
+                      _getPieceImageAsset(item),
+                      style: const TextStyle(
+                        fontSize: 20.0,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            Text(game.currentPlayer?.name ?? ''),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _getPieceImageAsset(Piece piece) {
+  final pieceName = piece.isWhite ? 'l' : 'd';
+
+  if (piece is King) {
+    return 'assets/images/Chess_k${pieceName}t45.svg.png';
+  } else if (piece is Queen) {
+    return 'assets/images/Chess_q${pieceName}t45.svg.png';
+  } else if (piece is Rook) {
+    return 'assets/images/Chess_r${pieceName}t45.svg.png';
+  } else if (piece is Bishop) {
+    return 'assets/images/Chess_b${pieceName}t45.svg.png';
+  } else if (piece is Knight) {
+    return 'assets/images/Chess_n${pieceName}t45.svg.png';
+  } else if (piece is Pawn) {
+    return 'assets/images/Chess_p${pieceName}t45.svg.png';
+  } else {
+    return '';
+  }
+}
+
+String _getPieceUnicode(Piece piece) {
+  if (piece is King) {
+    return piece.isWhite ? '' : '♚';
+  } else if (piece is Queen) {
+    return piece.isWhite ? '♕' : '♛';
+  } else if (piece is Rook) {
+    return piece.isWhite ? '♖' : '♜';
+  } else if (piece is Bishop) {
+    return piece.isWhite ? 'Chess_blt45.svg.png' : 'Chess_bdt45.svg.png';
+  } else if (piece is Knight) {
+    return piece.isWhite ? '♘' : '♞';
+  } else if (piece is Pawn) {
+    return piece.isWhite ? '♙' : '♟︎';
+  } else {
+    return '';
+  }
+}
