@@ -20,9 +20,6 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF007FFF),
-      appBar: AppBar(
-        title: const Text('Chess Game'),
-      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -56,7 +53,10 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ChessGame()),
+                  MaterialPageRoute(
+                      builder: (context) => const ChessGame(
+                            gameMode: GameMode.twoPlayer,
+                          )),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -120,7 +120,10 @@ class BotSelectionScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ChessGame()),
+                  MaterialPageRoute(
+                      builder: (context) => const ChessGame(
+                            gameMode: GameMode.botEasy,
+                          )),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -142,29 +145,10 @@ class BotSelectionScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ChessGame()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                primary: const Color(0xFF90EE90),
-                minimumSize: const Size(300.0, 80.0),
-              ),
-              child: const Text(
-                'Medium',
-                style: TextStyle(
-                  fontFamily: 'Itim',
-                  fontSize: 28.0,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20.0),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ChessGame()),
+                  MaterialPageRoute(
+                      builder: (context) => const ChessGame(
+                            gameMode: GameMode.botHard,
+                          )),
                 );
               },
               style: ElevatedButton.styleFrom(

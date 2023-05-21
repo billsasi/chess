@@ -1,13 +1,16 @@
 import 'package:chess2/captured_row.dart';
 import 'package:flutter/material.dart';
-import 'package:squares/squares.dart';
-import 'controller.dart';
 import 'util.dart';
 import 'package:chess/chess.dart' as chess;
+import 'ai.dart';
+
+enum GameMode { twoPlayer, botEasy, botMed, botHard }
 
 class ChessGame extends StatefulWidget {
+  final GameMode gameMode;
+
   @override
-  const ChessGame({Key? key}) : super(key: key);
+  const ChessGame({required this.gameMode, Key? key}) : super(key: key);
 
   @override
   ChessGameState createState() => ChessGameState();
@@ -16,14 +19,14 @@ class ChessGame extends StatefulWidget {
 class ChessGameState extends State<ChessGame> {
   late chess.Chess game;
   String? selected;
+  List<chess.Piece> whiteCaputuredPieces = [];
+  List<chess.Piece> blackCaputuredPieces = [];
 
   @override
   void initState() {
     super.initState();
     game = chess.Chess();
     selected = null;
-
-    print(game.board.length);
   }
 
   String getSquare(int row, int col) {
@@ -32,15 +35,134 @@ class ChessGameState extends State<ChessGame> {
     return '${cols[col]}${rows[row]}';
   }
 
-  void move(String from, String to) {
+  void botMove() {
+    String to = "";
+    chess.Move? next;
+    if (widget.gameMode == GameMode.botEasy) {
+      var moves = game.moves();
+      moves.shuffle();
+      to = moves[0];
+    } else if (widget.gameMode == GameMode.botHard) {
+      print('Bot thinking...');
+      next = findBestMove(game);
+
+      if (next!.piece == chess.PieceType.PAWN) {
+        to = next!.toAlgebraic;
+      }
+
+      final piece = pieceToAscii(next!.piece);
+      final square = next!.toAlgebraic;
+
+      to = "$piece$square";
+    }
+    print('Bot done thinking...');
+
+    var dest = to.substring(to.length - 2);
+
+    // capture piece
+    if (game.get(dest) != null) {
+      if (game.get(dest)!.color == chess.Color.WHITE) {
+        whiteCaputuredPieces.add(game.get(dest)!);
+      } else {
+        blackCaputuredPieces.add(game.get(dest)!);
+      }
+    }
+
+    print('move: ${to}');
+
+    if (game.get(dest) != null) {
+      to = to.substring(0, to.length - 2) + 'x' + to.substring(to.length - 2);
+    }
+
+    bool moveSuccess = false;
+
+    if (next != null) {
+      String from = next.fromAlgebraic;
+      to = next.toAlgebraic;
+      moveSuccess = game.move({'from': from, 'to': to});
+      print('move success: $moveSuccess');
+    } else {
+      moveSuccess = game.move(to);
+    }
+    setState(() {});
+
+    print('im here');
+
+    String winner = game.turn == chess.Color.WHITE ? 'Black' : 'White';
+
+    if (game.in_checkmate) {
+      showGameOverDialog(context, 'Checkmate!', winner: winner);
+    } else if (game.in_stalemate) {
+      showGameOverDialog(context, 'Stalemate');
+    } else if (game.in_draw) {
+      showGameOverDialog(context, 'Draw');
+    }
+  }
+
+  void move(String? from, String to) {
+    to = to.substring(to.length - 2);
+    // capture piece
+    if (game.get(to) != null) {
+      if (game.get(to)!.color == chess.Color.WHITE) {
+        whiteCaputuredPieces.add(game.get(to)!);
+      } else {
+        blackCaputuredPieces.add(game.get(to)!);
+      }
+    }
+
     setState(() {
-      game.move({'from': from, 'to': to});
+      if (from == null) {
+        game.move(to);
+      } else {
+        game.move({'from': from, 'to': to});
+      }
     });
+
+    String winner = game.turn == chess.Color.WHITE ? 'Black' : 'White';
+
+    if (game.in_checkmate) {
+      showGameOverDialog(context, 'Checkmate!', winner: winner);
+    } else if (game.in_stalemate) {
+      showGameOverDialog(context, 'Stalemate');
+    } else if (game.in_draw) {
+      showGameOverDialog(context, 'Draw');
+    }
+
+    if (game.turn == chess.Color.BLACK &&
+        widget.gameMode != GameMode.twoPlayer) {
+      WidgetsBinding.instance!.addPostFrameCallback((_) {
+        botMove();
+      });
+    }
+  }
+
+  void showGameOverDialog(BuildContext context, String message,
+      {String? winner}) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: winner != null
+              ? const Text('Checkmate!')
+              : const Text('Game Over'),
+          content: winner != null ? Text('$winner wins') : Text(message),
+          actions: [
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF007FFF),
       appBar: AppBar(
         title: const Text('Chess'),
       ),
@@ -48,6 +170,8 @@ class ChessGameState extends State<ChessGame> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            CapturedRow(whiteCaputuredPieces),
+            const SizedBox(height: 30),
             Align(
               alignment: Alignment.center,
               child: GridView.builder(
@@ -75,6 +199,7 @@ class ChessGameState extends State<ChessGame> {
                   return DragTarget<String>(
                       builder: (context, candidateData, rejectedData) {
                     return Draggable(
+                        dragAnchorStrategy: childDragAnchorStrategy,
                         feedback: Container(
                           child: piece == null
                               ? null
@@ -112,7 +237,9 @@ class ChessGameState extends State<ChessGame> {
                             }
                           },
                           child: Container(
-                              color: isWhite ? Colors.white : Colors.grey,
+                              color: isWhite
+                                  ? Colors.white
+                                  : Color.fromARGB(255, 130, 147, 165),
                               child: Stack(
                                 children: [
                                   if (reachable)
@@ -148,51 +275,23 @@ class ChessGameState extends State<ChessGame> {
                 },
               ),
             ),
+            const SizedBox(height: 30),
+            CapturedRow(blackCaputuredPieces),
+            const SizedBox(height: 30),
             Text(
-                '${game.turn == chess.Color.WHITE ? 'White' : 'Black'} to move'),
+              widget.gameMode == GameMode.twoPlayer
+                  ? '${game.turn == chess.Color.WHITE ? 'White' : 'Black'} to move'
+                  : game.turn == chess.Color.WHITE
+                      ? 'Your turn (white)'
+                      : 'Bot is thinking...',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-
-  String getPieceImageAsset(chess.Piece piece) {
-    final pieceName = piece.color == chess.Color.WHITE ? 'l' : 'd';
-
-    if (piece.type == chess.PieceType.KING) {
-      return 'assets/images/Chess_k${pieceName}t45.svg.png';
-    } else if (piece.type == chess.PieceType.QUEEN) {
-      return 'assets/images/Chess_q${pieceName}t45.svg.png';
-    } else if (piece.type == chess.PieceType.ROOK) {
-      return 'assets/images/Chess_r${pieceName}t45.svg.png';
-    } else if (piece.type == chess.PieceType.BISHOP) {
-      return 'assets/images/Chess_b${pieceName}t45.svg.png';
-    } else if (piece.type == chess.PieceType.KNIGHT) {
-      return 'assets/images/Chess_n${pieceName}t45.svg.png';
-    } else if (piece.type == chess.PieceType.PAWN) {
-      return 'assets/images/Chess_p${pieceName}t45.svg.png';
-    } else {
-      return '';
-    }
-  }
-
-  // String getPieceImageAsset(Piece piece) {
-  //   final pieceName = piece.isWhite ? 'l' : 'd';
-
-  //   if (piece is King) {
-  //     return 'assets/images/Chess_k${pieceName}t45.svg.png';
-  //   } else if (piece is Queen) {
-  //     return 'assets/images/Chess_q${pieceName}t45.svg.png';
-  //   } else if (piece is Rook) {
-  //     return 'assets/images/Chess_r${pieceName}t45.svg.png';
-  //   } else if (piece is Bishop) {
-  //     return 'assets/images/Chess_b${pieceName}t45.svg.png';
-  //   } else if (piece is Knight) {
-  //     return 'assets/images/Chess_n${pieceName}t45.svg.png';
-  //   } else if (piece is Pawn) {
-  //     return 'assets/images/Chess_p${pieceName}t45.svg.png';
-  //   } else {
-  //     return '';
-  //   }
-  // }
 }

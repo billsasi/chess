@@ -6,6 +6,6 @@ import 'home_screen.dart';
 void main() {
   runApp(const MaterialApp(
     title: 'Chess',
-    home: ChessGame(),
+    home: HomeScreen(),
   ));
 }
