@@ -24,7 +24,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const SizedBox(height: 40.0),
+            const SizedBox(height: 70.0),
             SizedBox(
               width: 350.0,
               height: 100.0,

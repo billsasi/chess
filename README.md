@@ -1,8 +1,19 @@
 # chess
+ https://github.com/billsasi/chess
 
-## Chess Pieces from: By Cburnett - Own work, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=1499808
+## Chess pieces By Cburnett - Own work, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=1499808
 
-A new Flutter project.
+Created with Flutter and chess.dart. Bot AI from https://github.com/davecom/chess.dart/blob/master/test/ai.dart
+
+## Setup
+1. Install dependencies
+```
+flutter pub get
+```
+2. Run the app
+```
+flutter run
+```
 
 ## Getting Started
 
